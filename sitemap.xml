@@ -6,21 +6,27 @@
 		<loc>https://greensley.eu/cookies.html</loc>
 	</url>
 	<url>
-		<loc>https://greensley.eu/mining.html</loc>
-	</url>
-	<url>
-		<loc>https://greensley.eu/recycling.html</loc>
-	</url>
-	<url>
-		<loc>https://greensley.eu/insulation.html</loc>
-	</url>
-	<url>
-		<loc>https://greensley.eu/pyrolysis.html</loc>
-	</url>
-	<url>
 		<loc>https://greensley.eu/iso9001.html</loc>
 	</url>
 	<url>
 		<loc>https://greensley.eu/terms.html</loc>
+	</url>
+	<url>
+		<loc>https://greensley.eu/africa_presence.html</loc>
+	</url>
+	<url>
+		<loc>https://greensley.eu/africa_mining.html</loc>
+	</url>
+	<url>
+		<loc>https://greensley.eu/africa_refining.html</loc>
+	</url>
+	<url>
+		<loc>https://greensley.eu/industrial_recycling.html</loc>
+	</url>
+	<url>
+		<loc>https://greensley.eu/industrial_insulation.html</loc>
+	</url>
+	<url>
+		<loc>https://greensley.eu/industrial_pyrolysis.html</loc>
 	</url>
 </urlset>
