@@ -1,7 +1,7 @@
 {
   "settings": {
     "name": "Greensley",
-    "currentPage": "index.html",
+    "currentPage": "banks.html",
     "theme": {
       "name": "mobirise5",
       "title": "Mobirise 5",
@@ -45,7 +45,7 @@
       }
     ],
     "uniqCompNum": 122,
-    "versionPublish": "5.9.21",
+    "versionPublish": "5.9.18",
     "imageResize": true,
     "screenshot": "screenshot.png",
     "favicon": false,
@@ -70,7 +70,7 @@
       "rejectText": "REJECT"
     },
     "cookiesAlertType": "1",
-    "mbrsiteDomain": "7vvpszsiok",
+    "mbrsiteDomain": "f6jaaydx1a",
     "google-analytics": "<!-- Google tag (gtag.js) -->\n<script async src=\"https://www.googletagmanager.com/gtag/js?id=G-5RSE1F0PW8\"></script>\n<script>\n  window.dataLayer = window.dataLayer || [];\n  function gtag(){dataLayer.push(arguments);}\n  gtag('js', new Date());\n\n  gtag('config', 'G-5RSE1F0PW8');\n</script>",
     "publishType": "local",
     "publishPath": "@PROJECT_PATH@",
