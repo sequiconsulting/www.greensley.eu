@@ -70,7 +70,7 @@
       "rejectText": "REJECT"
     },
     "cookiesAlertType": "1",
-    "mbrsiteDomain": "a71pxdcwzd",
+    "mbrsiteDomain": "7vvpszsiok",
     "google-analytics": "<!-- Google tag (gtag.js) -->\n<script async src=\"https://www.googletagmanager.com/gtag/js?id=G-5RSE1F0PW8\"></script>\n<script>\n  window.dataLayer = window.dataLayer || [];\n  function gtag(){dataLayer.push(arguments);}\n  gtag('js', new Date());\n\n  gtag('config', 'G-5RSE1F0PW8');\n</script>",
     "publishType": "local",
     "publishPath": "@PROJECT_PATH@",
@@ -81,7 +81,7 @@
       "settings": {
         "main": true,
         "title": "Greensley",
-        "meta_descr": "international traders and service agents for the raw materials and recycling industries",
+        "meta_descr": "international traders and service providers for the raw materials and recycling industries",
         "header_custom": "",
         "footer_custom": "",
         "html_before": ""
