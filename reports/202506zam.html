@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Analysis: Recycled Zamak 5 Pricing in Asia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals & Metallic Accents -->
+    <!-- Application Structure Plan: A top-down narrative dashboard. It starts with the main conclusion (the price discount) in an interactive hero section. This is followed by sections for Market Context (growth chart), a direct Price Comparison (bar chart), a breakdown of Influencing Factors (icon-driven cards), an interactive table of Supplier Data, and finally, Strategic Takeaways. This structure is designed to deliver the most critical information first and then allow users to seamlessly drill down into the supporting details, making the report's insights more digestible and actionable than a linear document. -->
+    <!-- Visualization & Content Choices: 
+        - Hero Finding: Goal: Inform/Engage. Method: Large text + an interactive HTML/JS range slider to dynamically calculate the price discount. Justification: Makes the core finding tangible and memorable.
+        - Market Growth: Goal: Compare. Method: Chart.js Bar Chart showing 2024 vs 2035 market value. Justification: Clearly visualizes the positive market trend.
+        - Price Comparison: Goal: Compare. Method: Chart.js Grouped Bar Chart (SMM vs. Recycled Range). Justification: Provides a direct visual comparison of the primary and secondary material costs.
+        - Influencing Factors: Goal: Organize/Explain. Method: HTML/Tailwind cards with Unicode icons. An HTML/Tailwind progress bar visualizes EPR targets. Justification: Breaks complex info into digestible, thematic chunks.
+        - Supplier Pricing: Goal: Organize. Method: Responsive HTML table. Justification: The clearest way to present tabular supplier data.
+        - All choices use Canvas/HTML/CSS, avoiding SVG/Mermaid as required. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF7;
+            color: #333333;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 45vh;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        .accent-bg { background-color: #4E8098; }
+        .accent-text { color: #4E8098; }
+        .highlight-bg { background-color: #B48A64; }
+        .highlight-text { color: #B48A64; }
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAEAEA;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+        }
+        .nav-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-button:hover {
+            color: #B48A64;
+            border-color: #B48A64;
+        }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #B48A64;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 4px solid #FDFBF7;
+        }
+        .slider-thumb::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: #B48A64;
+            cursor: pointer;
+            border-radius: 50%;
+             border: 4px solid #FDFBF7;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 border-b border-gray-200">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold highlight-text">
+                <span class="accent-text">Zamak 5</span> Insights
+            </h1>
+            <nav class="hidden md:flex space-x-6 text-gray-600">
+                <a href="#overview" class="nav-button border-b-2 border-transparent pb-1">Overview</a>
+                <a href="#market" class="nav-button border-b-2 border-transparent pb-1">Market</a>
+                <a href="#pricing" class="nav-button border-b-2 border-transparent pb-1">Pricing Factors</a>
+                <a href="#strategy" class="nav-button border-b-2 border-transparent pb-1">Strategy</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-16">
+
+        <!-- Hero Section: The Key Finding -->
+        <section id="overview" class="text-center mb-16 md:mb-24">
+            <p class="font-semibold accent-text mb-2 text-lg">Analysis of Recycled Zamak 5 Ingot Pricing</p>
+            <h2 class="text-4xl md:text-6xl font-extrabold mb-4">A Clear Economic Advantage</h2>
+            <p class="max-w-3xl mx-auto text-gray-600 text-lg md:text-xl mb-8">
+                This interactive report analyzes the expected selling price for recycled Zamak 5 ingots for direct importers in Asia. The primary finding is a significant and consistent price discount against the primary material benchmark, creating a compelling opportunity for cost optimization and enhanced sustainability.
+            </p>
+
+            <div class="max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100">
+                <p class="text-gray-600">Recycled Zamak 5 Price as a Percentage of SMM Index:</p>
+                <div class="my-4">
+                    <span id="price-percentage" class="text-6xl md:text-8xl font-bold highlight-text">80.5%</span>
+                </div>
+                <div class="flex items-center justify-center space-x-4 mb-4">
+                    <span class="text-lg font-medium text-gray-500">70%</span>
+                    <input id="price-slider" type="range" min="70.18" max="91.23" value="80.5" step="0.01" class="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-bg slider-thumb">
+                    <span class="text-lg font-medium text-gray-500">91%</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500">SMM Primary Benchmark</p>
+                        <p id="smm-price-display" class="text-2xl font-bold accent-text"></p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-500">Calculated Recycled Price</p>
+                        <p id="recycled-price-display" class="text-2xl font-bold highlight-text"></p>
+                    </div>
+                </div>
+                 <p class="text-xs text-gray-400 mt-4">Move the slider to explore the potential price range and see the direct cost impact.</p>
+            </div>
+        </section>
+
+        <!-- Market Context Section -->
+        <section id="market" class="mb-16 md:mb-24">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl md:text-4xl font-bold mb-3">A Strong and Growing Market</h3>
+                <p class="max-w-3xl mx-auto text-gray-600 text-lg">The opportunity for recycled Zamak 5 is anchored in a robustly expanding Asian market. Both zinc alloy consumption and the broader die-casting industry show strong growth forecasts, ensuring stable, long-term demand for primary and recycled materials alike. This section visualizes the projected expansion.</p>
+            </div>
+
+            <div class="grid md:grid-cols-5 gap-8 items-center">
+                <div class="md:col-span-2">
+                    <div class="card">
+                         <h4 class="text-xl font-bold mb-2">Asia's Zinc Alloy Consumption</h4>
+                         <p class="text-gray-600 mb-4">The market is projected to grow significantly in both volume and value, driven by industrialization across the region.</p>
+                         <div class="space-y-3">
+                             <div class="flex justify-between items-baseline">
+                                 <span class="font-semibold">2024 Consumption:</span>
+                                 <span class="text-2xl font-bold accent-text">4.5M tons</span>
+                             </div>
+                             <div class="flex justify-between items-baseline">
+                                 <span class="font-semibold">2035 Projection:</span>
+                                 <span class="text-2xl font-bold accent-text">5.9M tons</span>
+                             </div>
+                              <div class="flex justify-between items-baseline">
+                                 <span class="font-semibold">Projected Value (2035):</span>
+                                 <span class="text-2xl font-bold accent-text">$19B</span>
+                             </div>
+                         </div>
+                    </div>
+                </div>
+                <div class="md:col-span-3">
+                    <div class="card p-4 md:p-6">
+                        <div class="chart-container">
+                            <canvas id="marketGrowthChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Price Comparison & Drivers Section -->
+        <section id="pricing" class="mb-16 md:mb-24">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl md:text-4xl font-bold mb-3">Understanding the Price Differential</h3>
+                <p class="max-w-3xl mx-auto text-gray-600 text-lg">The significant price advantage of recycled Zamak 5 is not arbitrary. It's shaped by a complex interplay of market forces, regulatory pressures, and logistical realities. This section explores the key factors that direct importers must understand to navigate this market effectively.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                <div class="card p-4 md:p-6">
+                    <h4 class="text-xl font-bold text-center mb-4">Direct Comparison: Primary vs. Recycled</h4>
+                    <div class="chart-container">
+                        <canvas id="priceComparisonChart"></canvas>
+                    </div>
+                </div>
+                <div class="card p-6 md:p-8">
+                    <h4 class="text-xl font-bold mb-4">Key Pricing Factors</h4>
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-4">
+                            <span class="text-2xl highlight-text mt-1">♻️</span>
+                            <div>
+                                <h5 class="font-bold">Supply, Demand & Sustainability</h5>
+                                <p class="text-gray-600">Growing global recycling capacity meets rising industrial demand. A structural shift towards a circular economy provides price stability and moves recycled content from a choice to a strategic imperative.</p>
+                            </div>
+                        </div>
+                         <div class="flex items-start space-x-4">
+                            <span class="text-2xl highlight-text mt-1">📜</span>
+                            <div>
+                                <h5 class="font-bold">Environmental Regulations (EPR)</h5>
+                                <p class="text-gray-600 mb-2">Mandates like India's Extended Producer Responsibility (EPR) rules create guaranteed, non-negotiable demand for recycled content, solidifying its market position.</p>
+                                <div class="text-xs">
+                                    <p class="font-semibold">India EPR Target (Recycled Content):</p>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                                         <div class="accent-bg h-2.5 rounded-full" style="width: 25%"></div>
+                                    </div>
+                                    <div class="flex justify-between mt-1"><span>5% (2027)</span><span>25% (2031)</span></div>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="flex items-start space-x-4">
+                            <span class="text-2xl highlight-text mt-1">🚚</span>
+                            <div>
+                                <h5 class="font-bold">Logistics & Trade Policy</h5>
+                                <p class="text-gray-600">Final landed costs are heavily influenced by freight charges and regional tariffs. Intra-Asia trade policies can create significant cost variations, requiring careful due diligence by importers.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h4 class="text-xl font-bold mb-4 text-center md:text-left">Example Supplier Pricing for Direct Importers</h4>
+                 <p class="text-gray-600 mb-6 text-center md:text-left">The following table, populated from the source report, shows real-world pricing examples from Asian suppliers. Note the common practice of tiered pricing, where larger purchase volumes result in lower per-ton costs, offering a clear path to cost optimization.</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="border-b-2 border-gray-200">
+                            <tr>
+                                <th class="p-3 font-semibold">Supplier/Source</th>
+                                <th class="p-3 font-semibold">Price Range (USD/mt)</th>
+                                <th class="p-3 font-semibold">Quantity Tiers</th>
+                                <th class="p-3 font-semibold hidden md:table-cell">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="supplier-table-body">
+                            <!-- JS will populate this -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- Strategic Considerations Section -->
+        <section id="strategy" class="bg-white rounded-2xl p-8 md:p-12 border border-gray-100 shadow-lg">
+            <div class="text-center mb-8">
+                <h3 class="text-3xl md:text-4xl font-bold mb-3">Strategic Implications for Importers</h3>
+                <p class="max-w-3xl mx-auto text-gray-600 text-lg">Capitalizing on the recycled Zamak 5 market requires more than just sourcing the lowest price. A strategic approach that balances cost, quality, and compliance is essential for long-term success.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-gray-50 p-6 rounded-xl">
+                    <h4 class="font-bold text-lg mb-2 highlight-text flex items-center"><span class="text-2xl mr-2">💰</span>Cost Optimization</h4>
+                    <p class="text-gray-600">Leverage the ~9-30% discount against the SMM index. Use volume purchasing to access lower price tiers and significantly reduce raw material expenditures.</p>
+                </div>
+                <div class="bg-gray-50 p-6 rounded-xl">
+                    <h4 class="font-bold text-lg mb-2 highlight-text flex items-center"><span class="text-2xl mr-2">🔗</span>Supply Chain Resilience</h4>
+                    <p class="text-gray-600">Diversify sourcing among reputable recycled material suppliers. This mitigates risks from trade policy shifts and ensures a more stable supply flow than relying solely on primary metals.</p>
+                </div>
+                 <div class="bg-gray-50 p-6 rounded-xl">
+                    <h4 class="font-bold text-lg mb-2 highlight-text flex items-center"><span class="text-2xl mr-2">✅</span>Quality Assurance</h4>
+                    <p class="text-gray-600">Partner with suppliers who guarantee material purity and chemical composition. Consistent quality is crucial to prevent defects and ensure optimal die-casting performance.</p>
+                </div>
+                 <div class="bg-gray-50 p-6 rounded-xl">
+                    <h4 class="font-bold text-lg mb-2 highlight-text flex items-center"><span class="text-2xl mr-2">🌿</span>Sustainability & Compliance</h4>
+                    <p class="text-gray-600">Proactively integrate recycled content to meet emerging regulations like EPR. This not only ensures compliance but also enhances corporate sustainability credentials, a growing market differentiator.</p>
+                </div>
+                 <div class="bg-gray-50 p-6 rounded-xl">
+                    <h4 class="font-bold text-lg mb-2 highlight-text flex items-center"><span class="text-2xl mr-2">📈</span>Proactive Market Monitoring</h4>
+                    <p class="text-gray-600">Continuously track the SMM index, regional trade policies, and recycling technology advancements to adapt procurement strategies and seize new opportunities as they arise.</p>
+                </div>
+                 <div class="bg-gray-50 p-6 rounded-xl">
+                    <h4 class="font-bold text-lg mb-2 highlight-text flex items-center"><span class="text-2xl mr-2">🤝</span>Supplier Collaboration</h4>
+                    <p class="text-gray-600">Work with suppliers on material specifications and process optimization. A collaborative approach can unlock further efficiencies in cost, quality, and performance.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="text-center py-8 mt-12 border-t border-gray-200">
+        <p class="text-gray-500">Interactive report generated from source analysis. Data as of June 17, 2025.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const marketData = {
+                smmPrice: 2849.88,
+                recycledPrice: {
+                    low: 2000.00,
+                    high: 2600.00
+                },
+                growth: {
+                    years: ['2024 Value', '2035 Projection'],
+                    values: [13.2, 19.0] 
+                },
+                suppliers: [
+                    { name: 'Hebei Daizong Metal', price: 'US$2,000-3,500', quantity: 'Not Specified', notes: 'Implied secondary/recycled' },
+                    { name: 'Guozhong Steel', price: 'US$1,980-2,380', quantity: '1-100+ Tons', notes: 'Tiered pricing' },
+                    { name: 'Yien Metal', price: 'US$2,000-2,200', quantity: '50-1,000+ Tons', notes: 'Explicitly recycled' },
+                    { name: 'Globalsources.com Listing', price: 'US$1,700-2,000', quantity: '4-100+ Tons', notes: 'Lists Zamak 5 properties' },
+                    { name: 'Hebei Ming Pai', price: 'US$1,900-2,620', quantity: '3-25+ Tons', notes: 'Explicitly recycled/Zamak' }
+                ]
+            };
+            
+            const priceSlider = document.getElementById('price-slider');
+            const pricePercentageEl = document.getElementById('price-percentage');
+            const smmPriceDisplayEl = document.getElementById('smm-price-display');
+            const recycledPriceDisplayEl = document.getElementById('recycled-price-display');
+
+            function updatePriceDisplays() {
+                const percentage = parseFloat(priceSlider.value);
+                const smmPrice = marketData.smmPrice;
+                const recycledPrice = smmPrice * (percentage / 100);
+
+                pricePercentageEl.textContent = `${percentage.toFixed(1)}%`;
+                smmPriceDisplayEl.textContent = `$${smmPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                recycledPriceDisplayEl.textContent = `$${recycledPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
+
+            priceSlider.addEventListener('input', updatePriceDisplays);
+            updatePriceDisplays();
+
+
+            const supplierTableBody = document.getElementById('supplier-table-body');
+            marketData.suppliers.forEach(supplier => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-100 hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="p-3">${supplier.name}</td>
+                    <td class="p-3 font-medium highlight-text">${supplier.price}</td>
+                    <td class="p-3">${supplier.quantity}</td>
+                    <td class="p-3 text-sm text-gray-500 hidden md:table-cell">${supplier.notes}</td>
+                `;
+                supplierTableBody.appendChild(row);
+            });
+
+            
+            Chart.defaults.font.family = 'Inter';
+            Chart.defaults.color = '#6b7280';
+            
+            const marketGrowthCtx = document.getElementById('marketGrowthChart').getContext('2d');
+            new Chart(marketGrowthCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['2024 Market', '2035 Projection'],
+                    datasets: [{
+                        label: 'Unwrought Zinc Alloy Market Value (USD Billions)',
+                        data: [13.2, 19],
+                        backgroundColor: ['rgba(78, 128, 152, 0.7)', 'rgba(180, 138, 100, 0.7)'],
+                        borderColor: ['#4E8098', '#B48A64'],
+                        borderWidth: 2,
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Asia Unwrought Zinc Alloys Market Growth ($B)', font: { size: 16 } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `$${context.parsed.y} Billion`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Market Value (USD Billions)' }
+                        }
+                    }
+                }
+            });
+
+            const priceComparisonCtx = document.getElementById('priceComparisonChart').getContext('2d');
+            new Chart(priceComparisonCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Zamak 5 Pricing (USD/mt)'],
+                    datasets: [
+                        {
+                            label: 'SMM Primary Price',
+                            data: [marketData.smmPrice],
+                            backgroundColor: 'rgba(78, 128, 152, 0.7)',
+                            borderColor: '#4E8098',
+                            borderWidth: 2,
+                            borderRadius: 5,
+                        },
+                        {
+                            label: 'Recycled Price Range',
+                            data: [[marketData.recycledPrice.low, marketData.recycledPrice.high]],
+                            backgroundColor: 'rgba(180, 138, 100, 0.7)',
+                            borderColor: '#B48A64',
+                            borderWidth: 2,
+                            borderRadius: 5,
+                            borderSkipped: false,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                     plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.raw && typeof context.raw === 'object' && !Array.isArray(context.raw)) {
+                                       label += `$${context.raw.y.toLocaleString()}`;
+                                    } else if (Array.isArray(context.raw)) {
+                                       label += `$${context.raw[0].toLocaleString()} - $${context.raw[1].toLocaleString()}`;
+                                    } else {
+                                        label += `$${context.parsed.y.toLocaleString()}`;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                         y: {
+                            beginAtZero: false,
+                            min: 1500,
+                            title: { display: true, text: 'Price (USD/mt)' }
+                        }
+                    }
+                }
+            });
+            
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
