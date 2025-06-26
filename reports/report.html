@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth bg-gray-100 dark:bg-zinc-950 dark:text-zinc-100">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Unique Importers – Advanced Dashboard</title>
+
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+    </style>
+
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <main class="container mx-auto p-6 flex flex-col gap-6 grow">
+      <!-- Header & Controls Section -->
+      <section class="flex flex-col md:flex-row gap-4 items-start md:items-end bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-lg">
+        <div class="flex-grow">
+          <h1 class="text-3xl font-bold text-zinc-800 dark:text-zinc-100">Unique Importers – Advanced Dashboard</h1>
+          <p id="summary-text" class="text-sm md:text-base text-zinc-500 dark:text-zinc-400 mt-1">Loading data...</p>
+        </div>
+
+        <div class="flex flex-wrap gap-3 items-end ml-auto">
+          <div class="flex flex-col">
+            <label for="search-input" class="text-xs font-medium text-zinc-600 dark:text-zinc-300 mb-1">Search Importer/Country</label>
+            <input id="search-input" type="text" placeholder="Search importer or country…" class="w-56 px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 shadow-sm" />
+          </div>
+
+          <div class="flex flex-col">
+            <label for="metric-select" class="text-xs font-medium text-zinc-600 dark:text-zinc-300 mb-1">Bar/Pie Metric</label>
+            <select id="metric-select" class="w-48 px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 shadow-sm">
+              <!-- Options populated by JS -->
+            </select>
+          </div>
+
+          <div class="flex flex-col">
+            <label for="topN" class="text-xs font-medium text-zinc-600 dark:text-zinc-300 mb-1">Top‑N</label>
+            <input id="topN" type="number" min="5" max="100" value="10" class="w-24 px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 shadow-sm" />
+          </div>
+
+          <!-- Removed Download Filtered CSV button -->
+          <button id="reset-btn" class="px-5 py-2.5 rounded-xl bg-zinc-200 text-zinc-800 font-medium hover:bg-zinc-300 transition-colors duration-200 shadow-md dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600">
+            Reset Filters
+          </button>
+        </div>
+      </section>
+
+      <!-- KPI Cards Section -->
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="kpi-cards">
+        <div class="p-5 text-center rounded-2xl shadow-md bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-950">
+          <p class="text-sm uppercase tracking-wide text-blue-800 dark:text-blue-200">Total Unique Importers</p>
+          <p id="kpi-unique-importers" class="text-3xl font-bold mt-1 text-blue-900 dark:text-blue-100">–</p>
+        </div>
+        <div class="p-5 text-center rounded-2xl shadow-md bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-950">
+          <p class="text-sm uppercase tracking-wide text-green-800 dark:text-green-200">Total Shipments</p>
+          <p id="kpi-shipments" class="text-3xl font-bold mt-1 text-green-900 dark:text-green-100">–</p>
+        </div>
+        <div class="p-5 text-center rounded-2xl shadow-md bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-900 dark:to-rose-950">
+          <p class="text-sm uppercase tracking-wide text-rose-800 dark:text-rose-200">Total Weight (Kg)</p>
+          <p id="kpi-kg" class="text-3xl font-bold mt-1 text-rose-900 dark:text-rose-100">–</p>
+        </div>
+        <div class="p-5 text-center rounded-2xl shadow-md bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-950">
+          <p class="text-sm uppercase tracking-wide text-purple-800 dark:text-purple-200">Avg. Shipments per Importer</p>
+          <p id="kpi-avg-shipments" class="text-3xl font-bold mt-1 text-purple-900 dark:text-purple-100">–</p>
+        </div>
+      </section>
+
+      <!-- Charts Section -->
+      <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Bar Chart Card -->
+        <div class="p-6 rounded-2xl shadow-lg bg-white dark:bg-zinc-900">
+          <h2 id="bar-title" class="text-xl font-semibold mb-4 text-zinc-800 dark:text-zinc-100">Top Importers by Total Shipments</h2>
+          <canvas id="bar-chart" class="h-80"></canvas>
+        </div>
+
+        <!-- Pie Chart Card -->
+        <div class="p-6 rounded-2xl shadow-lg bg-white dark:bg-zinc-900">
+          <h2 id="pie-title" class="text-xl font-semibold mb-4 text-zinc-800 dark:text-zinc-100">Total Shipments by Importer Country</h2>
+          <canvas id="pie-chart" class="h-80"></canvas>
+        </div>
+
+        <!-- Scatter Chart Card -->
+        <div class="p-6 rounded-2xl shadow-lg bg-white dark:bg-zinc-900 lg:col-span-2">
+          <div class="flex flex-wrap items-center justify-between mb-4 gap-3">
+            <h2 class="text-xl font-semibold text-zinc-800 dark:text-zinc-100">Scatter Plot Analysis</h2>
+            <div class="flex flex-wrap gap-3">
+              <div class="flex flex-col">
+                <label for="scatter-x-select" class="text-xs font-medium text-zinc-600 dark:text-zinc-300 mb-1">X-Axis</label>
+                <select id="scatter-x-select" class="px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 shadow-sm"></select>
+              </div>
+              <div class="flex flex-col">
+                <label for="scatter-y-select" class="text-xs font-medium text-zinc-600 dark:text-zinc-300 mb-1">Y-Axis</label>
+                <select id="scatter-y-select" class="px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-zinc-50 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 shadow-sm"></select>
+              </div>
+            </div>
+          </div>
+          <canvas id="scatter-chart" class="h-96"></canvas>
+        </div>
+      </section>
+
+      <!-- Data Table Section -->
+      <section class="p-6 rounded-2xl shadow-lg bg-white dark:bg-zinc-900 overflow-x-auto">
+        <h2 class="text-xl font-semibold mb-4 text-zinc-800 dark:text-zinc-100"><span id="table-count">0</span> rows displayed</h2>
+        <table class="min-w-full text-left text-sm border-collapse" id="data-table">
+          <thead id="table-head" class="sticky top-0 bg-white dark:bg-zinc-900 z-10 shadow-sm"></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <!-- ================================================== Script Area -->
+    <script>
+      // Utility helpers -----------------------------------------------------
+      /**
+       * Formats a number with locale-specific thousands separators.
+       * @param {number} n - The number to format.
+       * @returns {string} The formatted number.
+       */
+      const fmt = (n) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(n ?? 0);
+
+      /**
+       * Generates a random pastel HSL color string.
+       * @returns {string} HSL color string.
+       */
+      const pastel = () => `hsl(${Math.random() * 360}, 70%, 80%)`;
+
+      // State variables -----------------------------------------------------
+      let rawData = []; // Stores the original parsed CSV data
+      let displayColumns = []; // Stores the columns to display in the table
+      let metric = 'total # of shipments'; // Currently selected metric for bar/pie charts
+      let search = ''; // Current search query
+      let topN = 10; // Number of top importers to show in bar chart
+      let scatterX = 'total # of shipments'; // X-axis for scatter plot
+      let scatterY = 'total Kg'; // Y-axis for scatter plot
+      let sortColumn = null; // Column to sort the table by
+      let sortDirection = 'asc'; // 'asc' or 'desc' for table sorting
+
+      // Chart instances -----------------------------------------------------
+      let barChart, pieChart, scatterChart;
+
+      // DOM Elements --------------------------------------------------------
+      const searchInput = document.getElementById('search-input');
+      const metricSelect = document.getElementById('metric-select');
+      const topNInput = document.getElementById('topN');
+      // const downloadBtn = document.getElementById('download-btn'); // Removed
+      const resetBtn = document.getElementById('reset-btn');
+      const summaryText = document.getElementById('summary-text');
+      const kpiUniqueImporters = document.getElementById('kpi-unique-importers');
+      const kpiShipments = document.getElementById('kpi-shipments');
+      const kpiKg = document.getElementById('kpi-kg');
+      const kpiAvgShipments = document.getElementById('kpi-avg-shipments');
+      const barTitle = document.getElementById('bar-title');
+      const pieTitle = document.getElementById('pie-title');
+      const scatterXSelect = document.getElementById('scatter-x-select');
+      const scatterYSelect = document.getElementById('scatter-y-select');
+      const tableCount = document.getElementById('table-count');
+      const tableHead = document.getElementById('table-head');
+      const tableBody = document.getElementById('table-body');
+
+      // Initialize empty charts so we can update them later -----------------
+      function initCharts() {
+        const ctxBar = document.getElementById('bar-chart').getContext('2d');
+        const ctxPie = document.getElementById('pie-chart').getContext('2d');
+        const ctxScatter = document.getElementById('scatter-chart').getContext('2d');
+
+        // Common chart options
+        const chartOptions = {
+          responsive: true,
+          maintainAspectRatio: false, // Important for responsive height
+          plugins: {
+            legend: {
+              labels: {
+                color: 'hsl(210, 10%, 60%)' // Zinc-500
+              }
+            },
+            tooltip: {
+              backgroundColor: 'hsl(210, 10%, 20%)', // Darker background for tooltips
+              titleColor: 'hsl(210, 10%, 80%)',
+              bodyColor: 'hsl(210, 10%, 70%)',
+              borderColor: 'hsl(210, 10%, 40%)',
+              borderWidth: 1
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: 'hsl(210, 10%, 50%)' // Zinc-600
+              },
+              grid: {
+                color: 'hsl(210, 10%, 90%)', // Light grid lines
+                borderColor: 'hsl(210, 10%, 80%)'
+              }
+            },
+            y: {
+              ticks: {
+                color: 'hsl(210, 10%, 50%)' // Zinc-600
+              },
+              grid: {
+                color: 'hsl(210, 10%, 90%)',
+                borderColor: 'hsl(210, 10%, 80%)'
+              }
+            }
+          }
+        };
+
+        // Dark mode specific overrides for scales
+        if (document.documentElement.classList.contains('dark')) {
+          chartOptions.scales.x.ticks.color = 'hsl(210, 10%, 50%)'; // Zinc-400
+          chartOptions.scales.x.grid.color = 'hsl(210, 10%, 30%)'; // Zinc-800
+          chartOptions.scales.x.grid.borderColor = 'hsl(210, 10%, 40%)'; // Zinc-700
+          chartOptions.scales.y.ticks.color = 'hsl(210, 10%, 50%)'; // Zinc-400
+          chartOptions.scales.y.grid.color = 'hsl(210, 10%, 30%)'; // Zinc-800
+          chartOptions.scales.y.grid.borderColor = 'hsl(210, 10%, 40%)'; // Zinc-700
+        }
+
+
+        barChart = new Chart(ctxBar, {
+          type: 'bar',
+          data: { labels: [], datasets: [{ label: metric, data: [], backgroundColor: '#3b82f6', borderRadius: 8 }] }, // blue-500
+          options: {
+            ...chartOptions,
+            indexAxis: 'y',
+            scales: {
+              x: {
+                ...chartOptions.scales.x,
+                ticks: {
+                  ...chartOptions.scales.x.ticks,
+                  callback: fmt
+                }
+              },
+              y: {
+                ...chartOptions.scales.y,
+                beginAtZero: true
+              }
+            }
+          }
+        });
+
+        pieChart = new Chart(ctxPie, {
+          type: 'pie',
+          data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+          options: {
+            ...chartOptions,
+            scales: {}, // No scales for pie chart
+            plugins: {
+                ...chartOptions.plugins,
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed !== null) {
+                                label += fmt(context.parsed) + ' (' + context.dataset.data[context.dataIndex] / context.dataset.data.reduce((a,b)=>a+b,0) * 100).toFixed(1) + '%)';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+          }
+        });
+
+        scatterChart = new Chart(ctxScatter, {
+          type: 'scatter',
+          data: { datasets: [{ label: 'Importer', data: [], pointRadius: 5, backgroundColor: '#10b981', hoverRadius: 7 }] }, // emerald-500
+          options: {
+            ...chartOptions,
+            scales: {
+              x: {
+                ...chartOptions.scales.x,
+                title: { display: true, text: scatterX, color: chartOptions.scales.x.ticks.color },
+                ticks: { ...chartOptions.scales.x.ticks, callback: fmt }
+              },
+              y: {
+                ...chartOptions.scales.y,
+                title: { display: true, text: scatterY, color: chartOptions.scales.y.ticks.color },
+                ticks: { ...chartOptions.scales.y.ticks, callback: fmt }
+              }
+            },
+            plugins: {
+              ...chartOptions.plugins,
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => `${ctx.raw.importer || 'N/A'}: X=${fmt(ctx.raw.x)}, Y=${fmt(ctx.raw.y)}`
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Populate select dropdowns for metrics and scatter axes
+      function populateDropdowns(columns) {
+        const measurableColumns = columns.filter(col =>
+          !['importer name', 'importer country (2 letter code)'].includes(col)
+        );
+
+        // Populate metric select for bar/pie charts
+        metricSelect.innerHTML = ''; // Clear existing options
+        measurableColumns.forEach(col => {
+          const option = document.createElement('option');
+          option.value = col;
+          option.textContent = col;
+          metricSelect.appendChild(option);
+        });
+        metricSelect.value = metric; // Set default or current value
+
+        // Populate scatter X/Y selects
+        scatterXSelect.innerHTML = '';
+        scatterYSelect.innerHTML = '';
+        measurableColumns.forEach(col => {
+          const optionX = document.createElement('option');
+          optionX.value = col;
+          optionX.textContent = col;
+          scatterXSelect.appendChild(optionX);
+
+          const optionY = document.createElement('option');
+          optionY.value = col;
+          optionY.textContent = col;
+          scatterYSelect.appendChild(optionY);
+        });
+        scatterXSelect.value = scatterX;
+        scatterYSelect.value = scatterY;
+      }
+
+      // Main render logic to update all sections ----------------------------
+      function render() {
+        // 1. Filter data based on search input
+        const filtered = rawData.filter(r => {
+          const q = search.toLowerCase();
+          return r['importer name']?.toLowerCase().includes(q) ||
+                 r['importer country (2 letter code)']?.toLowerCase().includes(q);
+        });
+        tableCount.textContent = fmt(filtered.length);
+
+        // 2. Update KPIs (based on ALL rawData, not filtered, for overall context)
+        updateKPIs();
+
+        // 3. Update Bar Chart: Top N importers by selected metric
+        updateBarChart(rawData); // Use rawData for top N, then filter later if needed for consistency
+
+        // 4. Update Pie Chart: Distribution by country for selected metric
+        updatePieChart(rawData); // Use rawData for country distribution
+
+        // 5. Update Scatter Chart: Relationship between selected X and Y axes
+        updateScatterChart(rawData); // Use rawData for scatter, shows all data points
+
+        // 6. Update Data Table
+        updateDataTable(filtered);
+      }
+
+      function updateKPIs() {
+        const totals = rawData.reduce((a, r) => ({
+          ship: a.ship + (r['total # of shipments'] || 0),
+          kg: a.kg + (r['total Kg'] || 0),
+        }), { ship: 0, kg: 0 });
+
+        kpiUniqueImporters.textContent = fmt(rawData.length);
+        kpiShipments.textContent = fmt(totals.ship);
+        kpiKg.textContent = fmt(totals.kg);
+        kpiAvgShipments.textContent = rawData.length > 0 ? fmt(totals.ship / rawData.length) : '0';
+      }
+
+      function updateBarChart(dataToChart) {
+        const topRows = [...dataToChart]
+          .sort((a, b) => (b[metric] || 0) - (a[metric] || 0))
+          .slice(0, topN);
+
+        barChart.data.labels = topRows.map(r => r['importer name']);
+        barChart.data.datasets[0].data = topRows.map(r => r[metric] || 0);
+        barChart.data.datasets[0].label = metric;
+        barChart.update();
+        barTitle.textContent = `Top ${topN} Importers by ${metric}`;
+      }
+
+      function updatePieChart(dataToChart) {
+        const byC = {};
+        dataToChart.forEach(r => {
+          const c = r['importer country (2 letter code)'];
+          if (!c) return;
+          byC[c] = (byC[c] || 0) + (r[metric] || 0);
+        });
+        const piePairs = Object.entries(byC).sort((a, b) => b[1] - a[1]);
+
+        pieChart.data.labels = piePairs.map(p => p[0]);
+        pieChart.data.datasets[0].data = piePairs.map(p => p[1]);
+        pieChart.data.datasets[0].backgroundColor = piePairs.map(() => pastel());
+        pieChart.update();
+        pieTitle.textContent = `${metric} by Importer Country`;
+      }
+
+      function updateScatterChart(dataToChart) {
+        // Ensure scatterX and scatterY are valid column names
+        const availableColumns = Object.keys(dataToChart[0] || {});
+        if (!availableColumns.includes(scatterX)) scatterX = 'total # of shipments';
+        if (!availableColumns.includes(scatterY)) scatterY = 'total Kg';
+
+        const scatterData = dataToChart.map(r => ({
+          x: r[scatterX] || 0,
+          y: r[scatterY] || 0,
+          importer: r['importer name']
+        }));
+        scatterChart.data.datasets[0].data = scatterData;
+
+        // Update axis titles
+        scatterChart.options.scales.x.title.text = scatterX;
+        scatterChart.options.scales.y.title.text = scatterY;
+        scatterChart.update();
+      }
+
+      function updateDataTable(dataToDisplay) {
+        tableHead.innerHTML = '';
+        tableBody.innerHTML = '';
+
+        if (dataToDisplay.length) {
+          // Get unique column headers and filter out null/empty strings
+          displayColumns = Object.keys(rawData[0]).filter(col => col !== null && col !== undefined && col.trim() !== '');
+
+          // Create table header row
+          const trHead = document.createElement('tr');
+          displayColumns.forEach(col => {
+            const th = document.createElement('th');
+            th.textContent = col;
+            th.className = 'border-b-2 border-zinc-200 dark:border-zinc-700 py-3 px-4 font-semibold text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800 text-sm uppercase tracking-wider cursor-pointer transition-colors duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg';
+            th.dataset.column = col; // Store column name for sorting
+            th.addEventListener('click', () => handleTableSort(col));
+            trHead.appendChild(th);
+          });
+          tableHead.appendChild(trHead);
+
+          // Add sorting indicator
+          if (sortColumn) {
+            const currentHeader = tableHead.querySelector(`[data-column="${sortColumn}"]`);
+            if (currentHeader) {
+              const arrow = sortDirection === 'asc' ? ' ▲' : ' ▼';
+              currentHeader.textContent += arrow;
+            }
+          }
+
+          // Sort data before rendering rows
+          const sortedData = [...dataToDisplay];
+          if (sortColumn) {
+            sortedData.sort((a, b) => {
+              const valA = a[sortColumn];
+              const valB = b[sortColumn];
+
+              if (typeof valA === 'number' && typeof valB === 'number') {
+                return sortDirection === 'asc' ? valA - valB : valB - valA;
+              } else {
+                const strA = String(valA || '').toLowerCase();
+                const strB = String(valB || '').toLowerCase();
+                if (strA < strB) return sortDirection === 'asc' ? -1 : 1;
+                if (strA > strB) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+              }
+            });
+          }
+
+          // Populate table body
+          sortedData.forEach(r => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors duration-100 border-b border-zinc-100 dark:border-zinc-800';
+            displayColumns.forEach(col => {
+              const td = document.createElement('td');
+              td.className = 'py-2 px-4 whitespace-nowrap text-zinc-700 dark:text-zinc-300';
+              const value = r[col];
+              td.textContent = typeof value === 'number' ? fmt(value) : (value === null || value === undefined ? '-' : value);
+              tr.appendChild(td);
+            });
+            tableBody.appendChild(tr);
+          });
+        }
+      }
+
+      // Handle table column sorting
+      function handleTableSort(column) {
+        if (sortColumn === column) {
+          sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+          sortColumn = column;
+          sortDirection = 'asc';
+        }
+        render(); // Re-render the table with new sort order
+      }
+
+      // File download helper ----------------------------------------------
+      // Removed downloadFilteredCSV function as requested
+      /*
+      function downloadFilteredCSV() {
+        const q = search.toLowerCase();
+        const rows = rawData.filter(r => r['importer name']?.toLowerCase().includes(q) || r['importer country (2 letter code)']?.toLowerCase().includes(q));
+        const csv = Papa.unparse(rows, {
+            header: true,
+            quotes: true // Ensure values with commas are quoted
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `filtered_importers_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href); // Clean up URL object
+      }
+      */
+
+      // Reset filters and state
+      function resetFilters() {
+        search = '';
+        metric = 'total # of shipments';
+        topN = 10;
+        scatterX = 'total # of shipments';
+        scatterY = 'total Kg';
+        sortColumn = null;
+        sortDirection = 'asc';
+
+        searchInput.value = '';
+        metricSelect.value = metric;
+        topNInput.value = topN;
+        scatterXSelect.value = scatterX;
+        scatterYSelect.value = scatterY;
+
+        render();
+      }
+
+      // Event listeners ----------------------------------------------------
+      searchInput.addEventListener('input', (e) => { search = e.target.value; render(); });
+      metricSelect.addEventListener('change', (e) => { metric = e.target.value; render(); });
+      topNInput.addEventListener('change', (e) => { topN = parseInt(e.target.value) || 10; render(); });
+      scatterXSelect.addEventListener('change', (e) => { scatterX = e.target.value; updateScatterChart(rawData); });
+      scatterYSelect.addEventListener('change', (e) => { scatterY = e.target.value; updateScatterChart(rawData); });
+      // downloadBtn.addEventListener('click', downloadFilteredCSV); // Removed
+      resetBtn.addEventListener('click', resetFilters);
+
+      // Initial Data Load & Bootstrap --------------------------------------
+      async function loadCSV() {
+        try {
+          // Fetch the CSV file directly. This avoids issues with PapaParse's 'download' option
+          // when served from certain environments or with CORS.
+          const response = await fetch('unique_importers_summary.csv');
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const csvText = await response.text();
+
+          Papa.parse(csvText, {
+            header: true,
+            dynamicTyping: true, // Automatically convert numbers etc.
+            skipEmptyLines: true,
+            complete: (results) => {
+              // Filter out any rows that are entirely empty or malformed
+              rawData = results.data.filter(row => Object.values(row).some(value => value !== null && value !== ''));
+
+              if (rawData.length === 0) {
+                summaryText.textContent = "No data loaded or data is empty. Please check the CSV file.";
+                return;
+              }
+
+              // Determine initial columns for scatter plot, fallback if not found
+              const availableColumns = Object.keys(rawData[0]);
+              if (!availableColumns.includes(scatterX)) {
+                  const defaultX = availableColumns.find(col => col.includes('shipments') && !col.includes('South Africa')) || availableColumns[0];
+                  scatterX = defaultX || '';
+              }
+              if (!availableColumns.includes(scatterY)) {
+                  const defaultY = availableColumns.find(col => col.includes('Kg') || col.includes('tons')) || availableColumns[1];
+                  scatterY = defaultY || '';
+              }
+              if (!availableColumns.includes(metric)) {
+                  metric = availableColumns.find(col => col.includes('shipments') && !col.includes('South Africa')) || availableColumns[0];
+              }
+
+
+              summaryText.textContent = `Explore ${fmt(rawData.length)} importers with interactive charts, scatter analysis, and on-the-fly CSV download.`;
+              populateDropdowns(availableColumns); // Populate dropdowns once data headers are known
+              initCharts(); // Initialize charts after data is potentially available
+              render();     // Initial render of all components
+            },
+            error: (err) => {
+              console.error("PapaParse error:", err);
+              summaryText.textContent = `Error parsing CSV: ${err.message}`;
+            }
+          });
+        } catch (error) {
+          console.error("Error fetching CSV:", error);
+          summaryText.textContent = `Error loading data: ${error.message}. Please ensure 'unique_importers_summary.csv' is in the same directory.`;
+        }
+      }
+
+      // Start loading data when the window is fully loaded
+      window.addEventListener('load', loadCSV);
+    </script>
+  </body>
+</html>
+
